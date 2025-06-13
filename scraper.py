@@ -793,46 +793,42 @@ class ModularGoogleSheetsCalendarCrawler:
     # Add these methods to your ModularGoogleSheetsCalendarCrawler class in scraper.py
 
     async def setup_google_sheets(self) -> bool:
-        """Setup Google Sheets connection"""
-        # First try the provided credentials file path
+        """Setup Google Sheets connection for VM (headless)"""
+        
+        # Method 1: Try pre-generated OAuth token (for VM)
+        token_path = './authorized_user.json'
+        if os.path.exists(token_path):
+            try:
+                print("Using pre-generated OAuth token...")
+                self.gc = gspread.oauth(authorized_user_filename=token_path)
+                print("✅ Google Sheets: OAuth connection established.")
+                return True
+            except Exception as e:
+                print(f"Pre-generated token failed: {e}")
+        
+        # Method 2: Service Account (if available)
         if self.credentials_path and os.path.exists(self.credentials_path):
             try:
-                print(f"Using credentials file: {self.credentials_path}")
+                print(f"Trying credentials file: {self.credentials_path}")
                 with open(self.credentials_path, 'r') as f:
                     cred_data = json.load(f)
                 
                 if cred_data.get('type') == 'service_account':
-                    # Service account flow
+                    print("Service account detected...")
                     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
                     credentials = Credentials.from_service_account_file(self.credentials_path, scopes=scope)
                     self.gc = gspread.authorize(credentials)
-                    print("Google Sheets: Service Account connection established.")
-                    return True
-                elif 'installed' in cred_data or 'web' in cred_data:
-                    # OAuth client credentials file - use it for OAuth flow
-                    print("OAuth client credentials detected, starting OAuth flow...")
-                    self.gc = gspread.oauth(credentials_filename=self.credentials_path)
-                    print("Google Sheets: OAuth connection established.")
+                    print("✅ Google Sheets: Service Account connection established.")
                     return True
                 else:
-                    print("Unknown credentials file format, trying OAuth...")
-                    self.gc = gspread.oauth()
-                    print("Google Sheets: OAuth connection established.")
-                    return True
-                
+                    print("⚠️ Client credentials file cannot be used on headless VM")
+                    
             except Exception as e:
-                print(f"Google Sheets credential file error: {e}")
-                print("Falling back to default OAuth...")
+                print(f"Credentials file error: {e}")
         
-        # If no credentials file or it failed, try default OAuth
-        try:
-            print("Attempting default OAuth connection...")
-            self.gc = gspread.oauth()
-            print("Google Sheets: OAuth connection established.")
-            return True
-        except Exception as e:
-            print(f"Google Sheets OAuth Error: {e}")
-            return False
+        print("❌ All authentication methods failed")
+        print("💡 Please generate authorized_user.json on local machine and transfer to VM")
+        return False
 
     def read_google_sheet(self, sheet_url: str, worksheet_name: str = None) -> pd.DataFrame:
         """Read Google Sheet data"""
