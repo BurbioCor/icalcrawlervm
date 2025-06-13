@@ -311,7 +311,7 @@ async def main():
     # Configuration
     GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1Ip2kTmDkLbSkPiCm7F5XBqbSKLI6TpjINoYFxOGYeFY/edit?gid=1033503817#gid=1033503817"
     START_ROW = 1
-    END_ROW = 6  # Process all rows
+    END_ROW = None  # Process all rows
     CREDENTIALS_FILE = "icalcredentials.json"
     WORKSHEET_NAME = "Version1 with ical link"
     HEADLESS = True
